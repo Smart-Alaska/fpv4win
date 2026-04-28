@@ -1,6 +1,10 @@
 ﻿#pragma once
 
 #include "libavutil/frame.h"
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
 #include <QOpenGLBuffer>
 #include <QOpenGLFunctions>
 #include <QOpenGLShader>
@@ -40,6 +44,14 @@ protected:
     void initGeometry();
 
 private:
+    static constexpr int SHM_MAX_W = 1920;
+    static constexpr int SHM_MAX_H = 1080;
+    static constexpr int SHM_HEADER = 12;
+    static constexpr int SHM_SIZE = SHM_HEADER + SHM_MAX_W * SHM_MAX_H * 3;
+
+    void initShm();
+    void writeFrameToShm(const std::shared_ptr<AVFrame> &data);
+
     QOpenGLShaderProgram mProgram;
     QOpenGLTexture *mTexY = nullptr;
     QOpenGLTexture *mTexU = nullptr;
@@ -62,4 +74,8 @@ private:
     bool mNeedClear = false;
 
     volatile bool inited = false;
+
+    HANDLE mShmHandle = nullptr;
+    LPVOID mShmPtr = nullptr;
+    int mFrameId = 0;
 };

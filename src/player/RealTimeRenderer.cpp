@@ -1,5 +1,6 @@
 ﻿#include "RealTimeRenderer.h"
 #include "libavutil/pixfmt.h"
+#include "libswscale/swscale.h"
 #include <QOpenGLPixelTransferOptions>
 
 #define VSHCODE                                                                                                        \
@@ -78,13 +79,63 @@ static void safeDeleteTexture(QOpenGLTexture *texture) {
 
 RealTimeRenderer::RealTimeRenderer() {
     qWarning() << __FUNCTION__;
+    initShm();
 }
 
 RealTimeRenderer::~RealTimeRenderer() {
     qWarning() << __FUNCTION__;
+    if (mShmPtr) {
+        UnmapViewOfFile(mShmPtr);
+        mShmPtr = nullptr;
+    }
+    if (mShmHandle) {
+        CloseHandle(mShmHandle);
+        mShmHandle = nullptr;
+    }
     safeDeleteTexture(mTexY);
     safeDeleteTexture(mTexU);
     safeDeleteTexture(mTexV);
+}
+
+void RealTimeRenderer::initShm() {
+    mShmHandle = CreateFileMappingA(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, SHM_SIZE, "FPV4WIN_FRAME");
+    if (!mShmHandle) {
+        return;
+    }
+
+    mShmPtr = MapViewOfFile(mShmHandle, FILE_MAP_ALL_ACCESS, 0, 0, SHM_SIZE);
+    if (!mShmPtr) {
+        CloseHandle(mShmHandle);
+        mShmHandle = nullptr;
+    }
+}
+
+void RealTimeRenderer::writeFrameToShm(const std::shared_ptr<AVFrame> &data) {
+    if (!mShmPtr || !data || data->width <= 0 || data->height <= 0 || data->width > SHM_MAX_W || data->height > SHM_MAX_H) {
+        return;
+    }
+
+    SwsContext *swsCtx = sws_getContext(data->width, data->height, static_cast<AVPixelFormat>(data->format),
+                                        data->width, data->height, AV_PIX_FMT_BGR24, SWS_BILINEAR,
+                                        nullptr, nullptr, nullptr);
+    if (!swsCtx) {
+        return;
+    }
+
+    auto *base = static_cast<unsigned char *>(mShmPtr);
+    auto *header = reinterpret_cast<int *>(base);
+    unsigned char *dstData[4] = {base + SHM_HEADER, nullptr, nullptr, nullptr};
+    int dstLineSize[4] = {data->width * 3, 0, 0, 0};
+
+    int scaledHeight = sws_scale(swsCtx, data->data, data->linesize, 0, data->height, dstData, dstLineSize);
+    sws_freeContext(swsCtx);
+    if (scaledHeight != data->height) {
+        return;
+    }
+
+    header[0] = data->width;
+    header[1] = data->height;
+    header[2] = ++mFrameId;
 }
 
 void RealTimeRenderer::init() {
@@ -194,6 +245,8 @@ void RealTimeRenderer::updateTextureInfo(int width, int height, int format) {
 }
 
 void RealTimeRenderer::updateTextureData(const std::shared_ptr<AVFrame> &data) {
+    writeFrameToShm(data);
+
     double frameWidth = m_itemWidth;
     double frameHeight = m_itemHeight;
     if (m_itemWidth * (1.0 * data->height / data->width) < m_itemHeight) {
