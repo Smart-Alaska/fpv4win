@@ -46,10 +46,10 @@ protected:
     void initGeometry();
 
 private:
-    static constexpr int SHM_MAX_W = 1920;
-    static constexpr int SHM_MAX_H = 1080;
-    static constexpr int SHM_HEADER = 12;
-    static constexpr int SHM_SIZE = SHM_HEADER + SHM_MAX_W * SHM_MAX_H * 3;
+    static const int SHM_MAX_W = 1920;
+    static const int SHM_MAX_H = 1080;
+    static const int SHM_HEADER = 12;
+    static const int SHM_SIZE = SHM_HEADER + SHM_MAX_W * SHM_MAX_H * 3;
 
     void initShm();
     void writeFrameToShm(const std::shared_ptr<AVFrame> &data);

@@ -130,6 +130,7 @@ void RealTimeRenderer::writeFrameToShm(const std::shared_ptr<AVFrame> &data) {
     if (srcFormat == AV_PIX_FMT_NONE) {
         srcFormat = static_cast<AVPixelFormat>(mPixFmt);
     }
+    qWarning() << "[shm] w=" << width << "h=" << height << "fmt=" << (int)srcFormat << "ptr=" << (void*)mShmPtr;
 
     SwsContext *swsCtx = sws_getContext(width, height, srcFormat,
                                         width, height, AV_PIX_FMT_BGR24, SWS_BILINEAR,
