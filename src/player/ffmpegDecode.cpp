@@ -334,16 +334,14 @@ bool FFmpegDecoder::OpenAudio() {
 
 void FFmpegDecoder::CloseVideo() {
     if (pVideoCodecCtx) {
-        avcodec_close(pVideoCodecCtx);
-        pVideoCodecCtx = nullptr;
+        avcodec_free_context(&pVideoCodecCtx);
         videoStreamIndex = 0;
     }
 }
 
 void FFmpegDecoder::CloseAudio() {
     if (pAudioCodecCtx) {
-        avcodec_close(pAudioCodecCtx);
-        pAudioCodecCtx = nullptr;
+        avcodec_free_context(&pAudioCodecCtx);
         audioStreamIndex = 0;
     }
 }
