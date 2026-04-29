@@ -24,11 +24,23 @@ bool FFmpegDecoder::OpenInput(string &inputFile) {
     av_dict_set(&param, "rtsp_transport", "tcp", 0);
     av_dict_set(&param, "protocol_whitelist", "file,udp,tcp,rtp,rtmp,rtsp,http", 0);
 
+    pFormatCtx = avformat_alloc_context();
+    if (!pFormatCtx) {
+        av_dict_free(&param);
+        return false;
+    }
+    av_opt_set_int(pFormatCtx, "max_delay", 0, AV_OPT_SEARCH_CHILDREN);
+    av_opt_set_int(pFormatCtx, "reorder_queue_size", 0, AV_OPT_SEARCH_CHILDREN);
+
     // 打开输入
     if (avformat_open_input(&pFormatCtx, inputFile.c_str(), nullptr, &param) != 0) {
+        av_dict_free(&param);
         CloseInput();
         return false;
     }
+    av_dict_free(&param);
+    av_opt_set_int(pFormatCtx, "max_delay", 0, AV_OPT_SEARCH_CHILDREN);
+    av_opt_set_int(pFormatCtx, "reorder_queue_size", 0, AV_OPT_SEARCH_CHILDREN);
     // 超时机制
     static const int timeout = 10;
     auto startTime = std::make_shared<uint64_t>();

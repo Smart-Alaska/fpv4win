@@ -4,6 +4,7 @@ extern "C" {
 #include "libswscale/swscale.h"
 }
 #include <QOpenGLPixelTransferOptions>
+#include <cstring>
 
 #define VSHCODE                                                                                                        \
     R"(
@@ -105,11 +106,13 @@ void RealTimeRenderer::initShm() {
         return;
     }
 
-    mShmPtr = MapViewOfFile(mShmHandle, FILE_MAP_ALL_ACCESS, 0, 0, SHM_SIZE);
+    mShmPtr = MapViewOfFile(mShmHandle, FILE_MAP_WRITE, 0, 0, SHM_SIZE);
     if (!mShmPtr) {
         CloseHandle(mShmHandle);
         mShmHandle = nullptr;
+        return;
     }
+    std::memset(mShmPtr, 0, SHM_SIZE);
 }
 
 void RealTimeRenderer::writeFrameToShm(const std::shared_ptr<AVFrame> &data) {
