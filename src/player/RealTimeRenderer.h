@@ -1,6 +1,8 @@
 ﻿#pragma once
 
+extern "C" {
 #include "libavutil/frame.h"
+}
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif

@@ -1,6 +1,8 @@
 ﻿#include "RealTimeRenderer.h"
+extern "C" {
 #include "libavutil/pixfmt.h"
 #include "libswscale/swscale.h"
+}
 #include <QOpenGLPixelTransferOptions>
 
 #define VSHCODE                                                                                                        \
