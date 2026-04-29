@@ -72,6 +72,8 @@ private:
 
     int m_itemWidth = 0;
     int m_itemHeight = 0;
+    int mVideoWidth = 0;
+    int mVideoHeight = 0;
 
     bool mNeedClear = false;
 

@@ -113,12 +113,23 @@ void RealTimeRenderer::initShm() {
 }
 
 void RealTimeRenderer::writeFrameToShm(const std::shared_ptr<AVFrame> &data) {
-    if (!mShmPtr || !data || data->width <= 0 || data->height <= 0 || data->width > SHM_MAX_W || data->height > SHM_MAX_H) {
+    if (!mShmPtr || !data) {
         return;
     }
 
-    SwsContext *swsCtx = sws_getContext(data->width, data->height, static_cast<AVPixelFormat>(data->format),
-                                        data->width, data->height, AV_PIX_FMT_BGR24, SWS_BILINEAR,
+    int width = data->width > 0 ? data->width : mVideoWidth;
+    int height = data->height > 0 ? data->height : mVideoHeight;
+    if (width <= 0 || height <= 0 || width > SHM_MAX_W || height > SHM_MAX_H) {
+        return;
+    }
+
+    AVPixelFormat srcFormat = static_cast<AVPixelFormat>(data->format);
+    if (srcFormat == AV_PIX_FMT_NONE) {
+        srcFormat = static_cast<AVPixelFormat>(mPixFmt);
+    }
+
+    SwsContext *swsCtx = sws_getContext(width, height, srcFormat,
+                                        width, height, AV_PIX_FMT_BGR24, SWS_BILINEAR,
                                         nullptr, nullptr, nullptr);
     if (!swsCtx) {
         return;
@@ -127,16 +138,16 @@ void RealTimeRenderer::writeFrameToShm(const std::shared_ptr<AVFrame> &data) {
     auto *base = static_cast<unsigned char *>(mShmPtr);
     auto *header = reinterpret_cast<int *>(base);
     unsigned char *dstData[4] = {base + SHM_HEADER, nullptr, nullptr, nullptr};
-    int dstLineSize[4] = {data->width * 3, 0, 0, 0};
+    int dstLineSize[4] = {width * 3, 0, 0, 0};
 
-    int scaledHeight = sws_scale(swsCtx, data->data, data->linesize, 0, data->height, dstData, dstLineSize);
+    int scaledHeight = sws_scale(swsCtx, data->data, data->linesize, 0, height, dstData, dstLineSize);
     sws_freeContext(swsCtx);
-    if (scaledHeight != data->height) {
+    if (scaledHeight != height) {
         return;
     }
 
-    header[0] = data->width;
-    header[1] = data->height;
+    header[0] = width;
+    header[1] = height;
     header[2] = ++mFrameId;
 }
 
@@ -207,6 +218,8 @@ void RealTimeRenderer::initGeometry() {
     mModelMatrix.setToIdentity();
 }
 void RealTimeRenderer::updateTextureInfo(int width, int height, int format) {
+    mVideoWidth = width;
+    mVideoHeight = height;
     mPixFmt = format;
     if(!inited) {
         inited = true;
@@ -249,12 +262,18 @@ void RealTimeRenderer::updateTextureInfo(int width, int height, int format) {
 void RealTimeRenderer::updateTextureData(const std::shared_ptr<AVFrame> &data) {
     writeFrameToShm(data);
 
+    int width = data->width > 0 ? data->width : mVideoWidth;
+    int height = data->height > 0 ? data->height : mVideoHeight;
+    if (width <= 0 || height <= 0) {
+        return;
+    }
+
     double frameWidth = m_itemWidth;
     double frameHeight = m_itemHeight;
-    if (m_itemWidth * (1.0 * data->height / data->width) < m_itemHeight) {
-        frameHeight = frameWidth * (1.0 * data->height / data->width);
+    if (m_itemWidth * (1.0 * height / width) < m_itemHeight) {
+        frameHeight = frameWidth * (1.0 * height / width);
     } else {
-        frameWidth = frameHeight * (1.0 * data->width / data->height);
+        frameWidth = frameHeight * (1.0 * width / height);
     }
     double x = (m_itemWidth - frameWidth) / 2;
     double y = (m_itemHeight - frameHeight) / 2;

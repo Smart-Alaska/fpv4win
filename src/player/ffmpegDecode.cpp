@@ -294,6 +294,13 @@ bool FFmpegDecoder::DecodeVideo(const AVPacket *av_pkt, shared_ptr<AVFrame> &pOu
                 av_strerror(ret, errStr, AV_ERROR_MAX_STRING_SIZE);
                 throw runtime_error("Decode video frame error. " + string(errStr));
             }
+
+            pOutFrame->width = hwFrame->width;
+            pOutFrame->height = hwFrame->height;
+            if (pOutFrame->format == AV_PIX_FMT_NONE) {
+                pOutFrame->format = pVideoCodecCtx->sw_pix_fmt;
+            }
+            av_frame_copy_props(pOutFrame.get(), hwFrame.get());
         }
     }
 
