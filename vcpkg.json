@@ -1,0 +1,22 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "fpv4win",
+  "version-string": "0.1.0",
+  "builtin-baseline": "4fc6cb0e9ed24f6abfac825f37aa9c74049f566e",
+  "dependencies": [
+    "ffmpeg",
+    "libpcap",
+    "libsodium",
+    "libusb",
+    "qt5",
+    "sdl2",
+    "vcpkg-tool-ninja"
+  ],
+  "overrides": [
+    {
+      "name": "ffmpeg",
+      "version": "6.0",
+      "port-version": 2
+    }
+  ]
+}
