@@ -9,12 +9,7 @@
 bool FFmpegDecoder::OpenInput(string &inputFile) {
     CloseInput();
 
-    if (!isHwDecoderEnable) {
-        hwDecoderType = av_hwdevice_find_type_by_name("d3d11va");
-        if (hwDecoderType != AV_HWDEVICE_TYPE_NONE) {
-            isHwDecoderEnable = true;
-        }
-    }
+    isHwDecoderEnable = false;
 
     AVDictionary *param = nullptr;
 
