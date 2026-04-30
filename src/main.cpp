@@ -2,6 +2,7 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QQuickWindow>
 #include <player/QQuickRealTimePlayer.h>
 
 #pragma comment(lib, "ws2_32.lib")
@@ -37,9 +38,11 @@ int main(int argc, char *argv[]) {
     SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)ApplicationCrashHandler);
 #endif
 
+    QGuiApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
     QGuiApplication app(argc, argv);
 
     QQmlApplicationEngine engine;
+    QQuickWindow::setDefaultAlphaBuffer(true);
 
     qmlRegisterType<QQuickRealTimePlayer>("realTimePlayer", 1, 0, "QQuickRealTimePlayer");
 
